@@ -1,7 +1,7 @@
 <?php
 /**
  * @see       https://github.com/zendframework/zend-diactoros for the canonical source repository
- * @copyright Copyright (c) 2015-2018 Zend Technologies USA Inc. (https://www.zend.com)
+ * @copyright Copyright (c) 2019 Zend Technologies USA Inc. (https://www.zend.com)
  * @license   https://github.com/zendframework/zend-diactoros/blob/master/LICENSE.md New BSD License
  */
 
@@ -27,9 +27,8 @@ use function sprintf;
  * by default, sets a status code of 200 and sets the Content-Type header to
  * text/csv.
  */
-class CsvResponse extends Response
+class CsvResponse extends DownloadResponse
 {
-    use DownloadResponseTrait;
     use InjectContentTypeTrait;
 
     /**
@@ -45,7 +44,7 @@ class CsvResponse extends Response
      */
     public function __construct($text, int $status = 200, string $filename = '', array $headers = [])
     {
-        if (is_string($filename) && $filename !== '') {
+        if ($filename !== '') {
             $headers = $this->prepareDownloadHeaders($filename, $headers);
         }
 
@@ -81,25 +80,5 @@ class CsvResponse extends Response
         $body->write($text);
         $body->rewind();
         return $body;
-    }
-
-    /**
-     * Get download headers
-     *
-     * @param string $filename
-     * @return array
-     */
-    private function getDownloadHeaders(string $filename): array
-    {
-        $headers = [];
-        $headers['cache-control'] = ['must-revalidate'];
-        $headers['content-description'] = ['File Transfer'];
-        $headers['content-disposition'] = [sprintf('attachment; filename=%s', $filename)];
-        $headers['content-transfer-encoding'] = ['Binary'];
-        $headers['content-type'] = ['text/csv; charset=utf-8'];
-        $headers['expires'] = ['0'];
-        $headers['pragma'] = ['Public'];
-
-        return $headers;
     }
 }

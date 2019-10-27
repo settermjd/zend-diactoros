@@ -1,7 +1,7 @@
 <?php
 /**
  * @see       https://github.com/zendframework/zend-diactoros for the canonical source repository
- * @copyright Copyright (c) 2015-2018 Zend Technologies USA Inc. (https://www.zend.com)
+ * @copyright Copyright (c) 2019 Zend Technologies USA Inc. (https://www.zend.com)
  * @license   https://github.com/zendframework/zend-diactoros/blob/master/LICENSE.md New BSD License
  */
 
@@ -11,6 +11,7 @@ namespace Zend\Diactoros\Response;
 
 use Zend\Diactoros\Exception\InvalidArgumentException;
 
+use Zend\Diactoros\Response;
 use function array_keys;
 use function array_merge;
 use function implode;
@@ -18,10 +19,10 @@ use function in_array;
 use function sprintf;
 
 /**
- * Trait DownloadResponseTrait
+ * Class DownloadResponse
  * @package Zend\Diactoros\Response
  */
-trait DownloadResponseTrait
+class DownloadResponse extends Response
 {
     /**
      * A list of header keys required to be sent with a download response
@@ -51,7 +52,7 @@ trait DownloadResponseTrait
         $overridesDownloadHeaders = false;
 
         foreach (array_keys($headers) as $header) {
-            if (in_array($header, $downloadHeaders)) {
+            if (in_array($header, $downloadHeaders, TRUE)) {
                 $overridesDownloadHeaders = true;
                 break;
             }
@@ -79,5 +80,24 @@ trait DownloadResponseTrait
         }
 
         return array_merge($headers, $this->getDownloadHeaders($filename));
+    }
+
+    /**
+     * Get download headers
+     *
+     * @param string $filename
+     * @return array
+     */
+    private function getDownloadHeaders(string $filename): array
+    {
+        return [
+            'cache-control' => 'must-revalidate',
+            'content-description' => 'File Transfer',
+            'content-disposition' => sprintf('attachment; filename=%s', $filename),
+            'content-transfer-encoding' => 'Binary',
+            'content-type' => 'text/csv; charset=utf-8',
+            'expires' => '0',
+            'pragma' => 'Public',
+        ];
     }
 }

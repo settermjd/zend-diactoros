@@ -72,18 +72,17 @@ EOF;
         );
 
         new CsvResponse(self::VALID_CSV_BODY, $status, $filename, [$header => [$value]]);
-
     }
 
-    public function invalidHeadersWhenDownloading()
+    public function invalidHeadersWhenDownloading() : array
     {
         return [
-            ['cache-control', 'must-revalidate',],
-            ['content-description', 'File Transfer',],
-            ['content-disposition', 'upload.csv',],
-            ['content-transfer-encoding', 'Binary',],
-            ['expires', '0',],
-            ['pragma', 'Public',]
+            ['cache-control', 'must-revalidate'],
+            ['content-description', 'File Transfer'],
+            ['content-disposition', 'upload.csv'],
+            ['content-transfer-encoding', 'Binary'],
+            ['expires', '0'],
+            ['pragma', 'Public']
         ];
     }
 
@@ -91,7 +90,7 @@ EOF;
     {
         $status = 404;
         $headers = [
-            'x-custom' => [ 'foo-bar' ],
+            'x-custom' => ['foo-bar'],
         ];
         $filename = '';
 
@@ -135,9 +134,6 @@ EOF;
         new CsvResponse($body);
     }
 
-    /**
-     * @group 115
-     */
     public function testConstructorRewindsBodyStream()
     {
         $response = new CsvResponse(self::VALID_CSV_BODY);
