@@ -31,22 +31,32 @@ class CsvResponse extends DownloadResponse
 {
     use InjectContentTypeTrait;
 
+    const DEFAULT_SEPARATOR = ',';
+
+    /**
+     * @var array
+     */
+    private $options;
+
     /**
      * Create a CSV response.
      *
      * Produces a CSV response with a Content-Type of text/csv and a default
      * status of 200.
      *
-     * @param string|StreamInterface $text String or stream for the message body.
+     * @param array|string|StreamInterface $text String or stream for the message body.
+     * @param array $options
      * @param int $status Integer status code for the response; 200 by default.
      * @param string $filename
      * @param array $headers Array of headers to use at initialization.
      */
-    public function __construct($text, int $status = 200, string $filename = '', array $headers = [])
+    public function __construct($text, array $options = [], int $status = 200, string $filename = '', array $headers = [])
     {
         if ($filename !== '') {
             $headers = $this->prepareDownloadHeaders($filename, $headers);
         }
+
+        $this->options = $options;
 
         parent::__construct(
             $this->createBody($text),
@@ -56,19 +66,36 @@ class CsvResponse extends DownloadResponse
     }
 
     /**
-     * Create the CSV message body.
-     *
+     * Create the body of the CSV response
      * @param string|StreamInterface $text
      * @return StreamInterface
      * @throws Exception\InvalidArgumentException if $text is neither a string or stream.
      */
     private function createBody($text) : StreamInterface
     {
-        if ($text instanceof StreamInterface) {
-            return $text;
+        $body = null;
+
+        if (is_string($text)) {
+            $body = $this->createBodyFromString($text);
         }
 
-        if (! is_string($text)) {
+        if ($text instanceof StreamInterface) {
+            $body = $text;
+        }
+
+        return $body;
+    }
+
+    /**
+     * Create the CSV message body from a CSV string.
+     *
+     * @param string $text
+     * @return StreamInterface
+     * @throws Exception\InvalidArgumentException if $text is neither a string or stream.
+     */
+    private function createBodyFromString(string $text) : StreamInterface
+    {
+        if (empty($text)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Invalid CSV content (%s) provided to %s',
                 (is_object($text) ? get_class($text) : gettype($text)),
@@ -80,5 +107,44 @@ class CsvResponse extends DownloadResponse
         $body->write($text);
         $body->rewind();
         return $body;
+    }
+
+    /**
+     * Get a fully rendered CSV record
+     * @param array $row
+     * @param array $last
+     * @return string
+     */
+    public function getRecord(array $row, array $last): string
+    {
+        $lineEnding = $this->getLineEnding($row, $last);
+        $row = implode($this->options['field_separator'] ?? self::DEFAULT_SEPARATOR, $row);
+
+        return $row . $lineEnding;
+    }
+
+    /**
+     * Is the current row the last one
+     * @param array $current
+     * @param array $last
+     * @return bool
+     */
+    public function isLastLine($current, $last)
+    {
+        return ($current == $last);
+    }
+
+    /**
+     * @param array $row
+     * @param array $last
+     * @return string
+     */
+    public function getLineEnding(array $row, array $last): string
+    {
+        $lineEnding = ($this->isLastLine($row, $last))
+            ? ''
+            : $this->options['line_ending'] ?? self::DEFAULT_LINE_ENDING;
+
+        return $lineEnding;
     }
 }
