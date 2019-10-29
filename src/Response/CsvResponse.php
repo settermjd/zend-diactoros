@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Zend\Diactoros\Response;
 
 use Psr\Http\Message\StreamInterface;
+use Traversable;
 use Zend\Diactoros\Exception;
 use Zend\Diactoros\Response;
 use Zend\Diactoros\Stream;
@@ -31,6 +32,7 @@ class CsvResponse extends DownloadResponse
 {
     use InjectContentTypeTrait;
 
+    const DEFAULT_LINE_ENDING = "\n";
     const DEFAULT_SEPARATOR = ',';
 
     /**
@@ -83,6 +85,10 @@ class CsvResponse extends DownloadResponse
             $body = $text;
         }
 
+        if (is_array($text) | $text instanceof Traversable) {
+            $body = $this->createBodyFromIterable($text);
+        }
+
         return $body;
     }
 
@@ -106,6 +112,25 @@ class CsvResponse extends DownloadResponse
         $body = new Stream('php://temp', 'wb+');
         $body->write($text);
         $body->rewind();
+        return $body;
+    }
+
+    /**
+     * Create the CSV response body from the contents of an array
+     * @param array|Traversable $text
+     * @return StreamInterface
+     */
+    public function createBodyFromIterable($text) : StreamInterface
+    {
+        $body = new Stream('php://temp', 'wb+');
+        $last = end($text);
+        reset($text);
+
+        foreach ($text as $row) {
+            $body->write($this->getRecord($row, $last));
+        }
+        $body->rewind();
+
         return $body;
     }
 

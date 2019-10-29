@@ -28,6 +28,101 @@ EOF;
         $this->assertSame(200, $response->getStatusCode());
     }
 
+    /**
+     * @dataProvider arrayToBodyDataProvider
+     * @param array $input
+     * @param string $output
+     * @param array $options
+     */
+    public function testConstructorAcceptsArrayAsBody($input, string $output, array $options)
+    {
+        $response = new CsvResponse($input, $options);
+        $this->assertSame($output, (string) $response->getBody());
+        $this->assertSame(200, $response->getStatusCode());
+    }
+
+    public function arrayToBodyDataProvider()
+    {
+        $bodyWithCommaAsFieldSeparatorOutput = <<<EOF
+first,last,email,dob
+john,citizen,john.citizen@afakeemailaddress.com,01/01/1970
+EOF;
+
+        $bodyWithTabAsFieldSeparatorOutput = <<<EOF
+first	last	email	dob
+john	citizen	john.citizen@afakeemailaddress.com	01/01/1970
+EOF;
+
+        $bodyWithSemicolonAsFieldSeparatorOutput = <<<EOF
+first;last;email;dob
+john;citizen;john.citizen@afakeemailaddress.com;01/01/1970
+EOF;
+
+        $bodyWithSemicolonAsFieldSeparatorAndCarriageReturnNewlineAsLineEndingOutput = <<<EOF
+first;last;email;dob\r
+john;citizen;john.citizen@afakeemailaddress.com;01/01/1970
+EOF;
+
+        $iterator = new \ArrayIterator(
+            [
+                ["first","last","email","dob"],
+                ["john","citizen","john.citizen@afakeemailaddress.com","01/01/1970"],
+            ]
+        );
+
+        return [
+            [
+                [
+                    ["first","last","email","dob"],
+                    ["john","citizen","john.citizen@afakeemailaddress.com","01/01/1970"],
+                ],
+                $bodyWithCommaAsFieldSeparatorOutput,
+                [
+                    "field_separator" => ',',
+                ],
+            ],
+            [
+                [
+                    ["first","last","email","dob"],
+                    ["john","citizen","john.citizen@afakeemailaddress.com","01/01/1970"],
+                ],
+                $bodyWithTabAsFieldSeparatorOutput,
+                [
+                    "field_separator" => "\t",
+                ],
+            ],
+            [
+                [
+                    ["first","last","email","dob"],
+                    ["john","citizen","john.citizen@afakeemailaddress.com","01/01/1970"],
+                ],
+                $bodyWithSemicolonAsFieldSeparatorOutput,
+                [
+                    "field_separator" => ";",
+                ],
+            ],
+            [
+                [
+                    ["first","last","email","dob"],
+                    ["john","citizen","john.citizen@afakeemailaddress.com","01/01/1970"],
+                ],
+                $bodyWithSemicolonAsFieldSeparatorAndCarriageReturnNewlineAsLineEndingOutput,
+                [
+                    "field_separator" => ";",
+                    "line_ending" => "\r\n",
+                ],
+            ],
+            [
+                $iterator,
+                $bodyWithSemicolonAsFieldSeparatorAndCarriageReturnNewlineAsLineEndingOutput,
+                [
+                    "field_separator" => ";",
+                    "line_ending" => "\r\n",
+                ],
+            ],
+        ];
+    }
+
     public function testConstructorAllowsPassingStatus()
     {
         $status = 404;
